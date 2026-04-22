@@ -130,6 +130,11 @@ body { font-family:'Space Grotesk',sans-serif; background:#050410; }
 }
 .planet.dragging { cursor:grabbing; z-index:10; }
 
+@media (max-width:768px) {
+  .planet-circle { width:80px !important; height:80px !important; }
+  .ring-svg { width:80px !important; height:80px !important; }
+}
+
 /* Sphere */
 .planet-circle {
   width:135px; height:135px; border-radius:50%;
@@ -433,6 +438,9 @@ window.addEventListener('load', () => {
   // Single ellipse — all 4 evenly spaced
   const ORBITS = [[300, 155]];
   let cx, cy, scale = 1, last = null;
+  const isMobile = () => window.innerWidth <= 768;
+  const planetHalf = () => isMobile() ? 40 : 67.5;
+  const labelOff   = () => isMobile() ? 58 : 93;
 
   planets.forEach(p => {
     p.dragging=false; p.snapBack=false;
@@ -443,7 +451,7 @@ window.addEventListener('load', () => {
   function resize(){
     const w = window.innerWidth, h = window.innerHeight;
     cx = w/2; cy = h/2;
-    const maxRx = Math.min(w/2 - 90, h/2 - 60);
+    const maxRx = Math.min(w/2 - (isMobile() ? 50 : 90), h/2 - 60);
     scale = maxRx / ORBITS[ORBITS.length-1][0];
     ORBITS.forEach((o,i) => {
       const ring = document.getElementById(`ring${i+1}`);
@@ -454,7 +462,7 @@ window.addEventListener('load', () => {
       if(!p.dragging && !p.snapBack){
         const pos = orbitPos(p);
         p.curX = pos.x; p.curY = pos.y;
-        p.el.style.transform = `translate(${p.curX-67.5}px,${p.curY-67.5}px)`;
+        p.el.style.transform = `translate(${p.curX-planetHalf()}px,${p.curY-planetHalf()}px)`;
       }
     });
   }
@@ -486,11 +494,11 @@ window.addEventListener('load', () => {
         const pos=orbitPos(p);
         p.curX=pos.x; p.curY=pos.y;
       }
-      p.el.style.transform = `translate(${p.curX - 67.5}px, ${p.curY - 67.5}px)`;
+      const ph = planetHalf();
+      p.el.style.transform = `translate(${p.curX - ph}px, ${p.curY - ph}px)`;
       const outAngle = Math.atan2(p.curY - cy, p.curX - cx);
-      const labelOffset = 93;
-      const lx = 67.5 + Math.cos(outAngle) * labelOffset;
-      const ly = 67.5 + Math.sin(outAngle) * labelOffset;
+      const lx = ph + Math.cos(outAngle) * labelOff();
+      const ly = ph + Math.sin(outAngle) * labelOff();
       p.label.style.transform = `translate(calc(${lx}px - 50%), calc(${ly}px - 50%))`;
     });
     requestAnimationFrame(tick);
@@ -532,9 +540,18 @@ window.addEventListener('load', () => {
     p.el.addEventListener('mouseenter', () => { if(!p.dragging && !p.snapBack) p._hovered = true; });
     p.el.addEventListener('mouseleave', () => { p._hovered = false; });
 
-    // Double-click → open content page
+    // Double-click (desktop) / double-tap (mobile) → open content page
     p.el.addEventListener('dblclick', () => {
       if(window._openPage) window._openPage(p.el.dataset.id, p.curX, p.curY);
+    });
+    let lastTap = 0;
+    p.el.addEventListener('touchend', (e) => {
+      const now = Date.now();
+      if(now - lastTap < 300 && !p.dragging) {
+        e.preventDefault();
+        if(window._openPage) window._openPage(p.el.dataset.id, p.curX, p.curY);
+      }
+      lastTap = now;
     });
   });
 
@@ -544,7 +561,7 @@ window.addEventListener('load', () => {
   planets.forEach(p => {
     const pos = orbitPos(p);
     p.curX = pos.x; p.curY = pos.y;
-    p.el.style.transform = `translate(${p.curX-67.5}px,${p.curY-67.5}px)`;
+    p.el.style.transform = `translate(${p.curX-planetHalf()}px,${p.curY-planetHalf()}px)`;
   });
   requestAnimationFrame(tick);
 })();
