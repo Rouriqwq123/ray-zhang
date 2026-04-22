@@ -10,6 +10,40 @@
 html, body { width:100%; height:100%; overflow:hidden; }
 body { font-family:'Space Grotesk',sans-serif; background:#050410; }
 
+/* ── LOADER ── */
+#loader {
+  position:fixed; inset:0; z-index:999;
+  background:#050410;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:32px;
+  transition:opacity 0.7s ease, visibility 0.7s ease;
+}
+#loader.done { opacity:0; visibility:hidden; }
+.loader-name {
+  font-family:'Dancing Script',cursive;
+  font-size:clamp(2.8rem,6vw,5rem);
+  font-weight:700; color:#fff;
+  text-shadow:0 0 40px rgba(120,160,255,0.9), 0 0 80px rgba(100,120,255,0.5);
+  animation:loaderPulse 1.8s ease-in-out infinite;
+}
+@keyframes loaderPulse {
+  0%,100% { opacity:0.7; text-shadow:0 0 30px rgba(120,160,255,0.6); }
+  50%      { opacity:1;   text-shadow:0 0 60px rgba(120,160,255,1), 0 0 100px rgba(100,120,255,0.6); }
+}
+.loader-bar {
+  width:160px; height:1px;
+  background:rgba(255,255,255,0.1); border-radius:1px; overflow:hidden;
+}
+.loader-fill {
+  height:100%; width:0%; border-radius:1px;
+  background:linear-gradient(to right, rgba(100,140,255,0.6), rgba(180,120,255,0.8));
+  animation:loaderBar 1.6s cubic-bezier(0.4,0,0.2,1) forwards;
+}
+@keyframes loaderBar {
+  0%   { width:0%; }
+  60%  { width:75%; }
+  100% { width:100%; }
+}
+
 /* ── BACKGROUND ── */
 .bg {
   position:fixed; inset:0; z-index:0;
@@ -249,6 +283,12 @@ body { font-family:'Space Grotesk',sans-serif; background:#050410; }
 </head>
 <body>
 
+<!-- ── LOADER ── -->
+<div id="loader">
+  <div class="loader-name">Ray Zhang</div>
+  <div class="loader-bar"><div class="loader-fill"></div></div>
+</div>
+
 <div class="bg"></div>
 <div class="bg-glow"></div>
 <div class="vig-l"></div><div class="vig-r"></div>
@@ -332,6 +372,15 @@ body { font-family:'Space Grotesk',sans-serif; background:#050410; }
 </div>
 
 <script>
+/* ── LOADER DISMISS ── */
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    const loader = document.getElementById('loader');
+    loader.classList.add('done');
+    loader.addEventListener('transitionend', () => loader.remove(), { once: true });
+  }, 1800);
+});
+
 /* ── PARTICLES ── */
 (function(){
   const c = document.getElementById('particles');
