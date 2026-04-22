@@ -505,20 +505,22 @@ window.addEventListener('load', () => {
   }
 
   planets.forEach(p => {
-    let offX=0, offY=0;
+    let offX=0, offY=0, tapStartX=0, tapStartY=0, lastTap=0;
+
     function onDown(e){
       e.preventDefault();
       p.dragging=true; p.snapBack=false;
       p.el.classList.add('dragging');
       const mx=e.touches?e.touches[0].clientX:e.clientX;
       const my=e.touches?e.touches[0].clientY:e.clientY;
+      tapStartX=mx; tapStartY=my;
       offX=mx-p.curX; offY=my-p.curY;
       p.dragX=p.curX; p.dragY=p.curY;
       function onMove(e2){
         p.dragX=(e2.touches?e2.touches[0].clientX:e2.clientX)-offX;
         p.dragY=(e2.touches?e2.touches[0].clientY:e2.clientY)-offY;
       }
-      function onUp(){
+      function onUp(e2){
         p.dragging=false; p.snapBack=true;
         p.el.classList.remove('dragging');
         p.angle=Math.atan2(p.curY-cy, p.curX-cx);
@@ -526,6 +528,18 @@ window.addEventListener('load', () => {
         window.removeEventListener('mouseup',onUp);
         window.removeEventListener('touchmove',onMove);
         window.removeEventListener('touchend',onUp);
+
+        // Double-tap detection: finger barely moved = it's a tap
+        const ux=e2.changedTouches?e2.changedTouches[0].clientX:e2.clientX;
+        const uy=e2.changedTouches?e2.changedTouches[0].clientY:e2.clientY;
+        const moved=Math.hypot(ux-tapStartX, uy-tapStartY);
+        if(moved < 12) {
+          const now=Date.now();
+          if(now-lastTap < 400) {
+            if(window._openPage) window._openPage(p.el.dataset.id, p.curX, p.curY);
+            lastTap=0;
+          } else { lastTap=now; }
+        }
       }
       window.addEventListener('mousemove',onMove);
       window.addEventListener('mouseup',onUp);
@@ -536,22 +550,12 @@ window.addEventListener('load', () => {
     p.el.addEventListener('mousedown',  onDown);
     p.el.addEventListener('touchstart', onDown, { passive: false });
 
-    // Hover pause (only when not dragging)
     p.el.addEventListener('mouseenter', () => { if(!p.dragging && !p.snapBack) p._hovered = true; });
     p.el.addEventListener('mouseleave', () => { p._hovered = false; });
 
-    // Double-click (desktop) / double-tap (mobile) → open content page
+    // Desktop double-click
     p.el.addEventListener('dblclick', () => {
       if(window._openPage) window._openPage(p.el.dataset.id, p.curX, p.curY);
-    });
-    let lastTap = 0;
-    p.el.addEventListener('touchend', (e) => {
-      const now = Date.now();
-      if(now - lastTap < 300 && !p.dragging) {
-        e.preventDefault();
-        if(window._openPage) window._openPage(p.el.dataset.id, p.curX, p.curY);
-      }
-      lastTap = now;
     });
   });
 
